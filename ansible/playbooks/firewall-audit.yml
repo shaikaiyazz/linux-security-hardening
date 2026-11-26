@@ -1,0 +1,51 @@
+---
+- name: Read-only firewalld audit
+  hosts: managed
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Check firewalld service state
+      ansible.builtin.command: firewall-cmd --state
+      register: firewalld_state
+      changed_when: false
+      failed_when: false
+
+    - name: Report firewalld state
+      ansible.builtin.debug:
+        msg: "{{ firewalld_state.stdout | default('firewalld state unavailable') }}"
+
+    - name: Read active firewalld zones
+      ansible.builtin.command: firewall-cmd --get-active-zones
+      register: active_zones
+      changed_when: false
+      failed_when: false
+      when: firewalld_state.rc == 0
+
+    - name: Display active zones
+      ansible.builtin.debug:
+        var: active_zones.stdout_lines
+      when:
+        - firewalld_state.rc == 0
+        - active_zones is defined
+        - active_zones.rc == 0
+
+    - name: Read runtime firewall configuration
+      ansible.builtin.command: firewall-cmd --list-all-zones
+      register: runtime_firewall
+      changed_when: false
+      failed_when: false
+      when: firewalld_state.rc == 0
+
+    - name: Display runtime firewall configuration
+      ansible.builtin.debug:
+        var: runtime_firewall.stdout_lines
+      when:
+        - firewalld_state.rc == 0
+        - runtime_firewall is defined
+        - runtime_firewall.rc == 0
+
+    - name: Report unavailable firewalld
+      ansible.builtin.debug:
+        msg: "firewalld is not active or could not be queried; investigate the host's firewall design."
+      when: firewalld_state.rc != 0
