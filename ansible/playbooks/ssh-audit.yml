@@ -1,0 +1,42 @@
+---
+- name: Read-only SSH configuration audit
+  hosts: managed
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Validate SSH daemon configuration syntax
+      ansible.builtin.command: sshd -t
+      register: sshd_syntax
+      changed_when: false
+      failed_when: false
+
+    - name: Read effective SSH daemon settings
+      ansible.builtin.command: sshd -T
+      register: sshd_effective
+      changed_when: false
+      failed_when: false
+
+    - name: Report SSH configuration syntax
+      ansible.builtin.debug:
+        msg: "{{ 'SSH configuration syntax is valid' if sshd_syntax.rc == 0 else 'Review SSH syntax: ' ~ (sshd_syntax.stderr | default('sshd -t failed')) }}"
+
+    - name: Display selected effective SSH settings
+      ansible.builtin.debug:
+        msg: "{{ sshd_effective.stdout_lines | select('match', '^(permitrootlogin|passwordauthentication|pubkeyauthentication|x11forwarding|maxauthtries) ') | list }}"
+      when: sshd_effective.rc == 0
+
+    - name: Report inability to read effective SSH settings
+      ansible.builtin.debug:
+        msg: "Could not read effective SSH settings; verify OpenSSH server installation and permissions."
+      when: sshd_effective.rc != 0
+
+    - name: Check SSH daemon service
+      ansible.builtin.command: systemctl is-active sshd
+      register: sshd_service
+      changed_when: false
+      failed_when: false
+
+    - name: Report SSH daemon service state
+      ansible.builtin.debug:
+        var: sshd_service.stdout
