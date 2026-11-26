@@ -1,0 +1,44 @@
+---
+- name: Read-only local account and privilege audit
+  hosts: managed
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Inspect critical account database permissions
+      ansible.builtin.command:
+        argv:
+          - stat
+          - -c
+          - "%a %U:%G %n"
+          - /etc/passwd
+          - /etc/group
+          - /etc/shadow
+          - /etc/gshadow
+      register: account_file_modes
+      changed_when: false
+      failed_when: false
+
+    - name: Display account database permissions
+      ansible.builtin.debug:
+        var: account_file_modes.stdout_lines
+
+    - name: List wheel group membership
+      ansible.builtin.command: getent group wheel
+      register: wheel_members
+      changed_when: false
+      failed_when: false
+
+    - name: Display wheel group membership
+      ansible.builtin.debug:
+        msg: "{{ wheel_members.stdout | default('Wheel group not found or unavailable') }}"
+
+    - name: Validate sudoers configuration
+      ansible.builtin.command: visudo -c
+      register: sudoers_check
+      changed_when: false
+      failed_when: false
+
+    - name: Report sudoers validation
+      ansible.builtin.debug:
+        msg: "{{ sudoers_check.stdout_lines | default([]) + sudoers_check.stderr_lines | default([]) }}"
