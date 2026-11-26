@@ -1,0 +1,37 @@
+---
+- name: Read-only SELinux audit
+  hosts: managed
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Read SELinux runtime mode
+      ansible.builtin.command: getenforce
+      register: selinux_mode
+      changed_when: false
+      failed_when: false
+
+    - name: Report SELinux runtime mode
+      ansible.builtin.debug:
+        msg: "{{ selinux_mode.stdout | default('SELinux mode unavailable') }}"
+
+    - name: Read SELinux status details
+      ansible.builtin.command: sestatus
+      register: selinux_status
+      changed_when: false
+      failed_when: false
+
+    - name: Display SELinux status
+      ansible.builtin.debug:
+        var: selinux_status.stdout_lines
+      when: selinux_status.rc == 0
+
+    - name: Check for recent SELinux AVC denials
+      ansible.builtin.command: ausearch -m AVC,USER_AVC -ts recent
+      register: selinux_avc
+      changed_when: false
+      failed_when: false
+
+    - name: Report recent AVC query
+      ansible.builtin.debug:
+        msg: "{{ selinux_avc.stdout_lines | default(['AVC query returned no output']) }}"
