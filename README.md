@@ -33,14 +33,29 @@ linux-security-hardening/
 ├── README.md
 ├── .gitignore
 ├── docs/
-│   └── security-baseline.md
+│   ├── security-baseline.md
+│   ├── ssh-hardening.md
+│   ├── firewall-hardening.md
+│   ├── selinux-hardening.md
+│   ├── account-and-access.md
+│   ├── audit-and-logging.md
+│   ├── implementation-and-rollback.md
+│   └── incident-response-basics.md
 ├── scripts/
-│   └── audit-baseline.sh
+│   ├── audit-baseline.sh
+│   ├── check-selinux.sh
+│   └── check-firewalld.sh
 └── ansible/
+    ├── ansible.cfg
+    ├── README.md
     ├── inventory/
     │   └── hosts.example.ini
     └── playbooks/
-        └── security-audit.yml
+        ├── security-audit.yml
+        ├── ssh-audit.yml
+        ├── firewall-audit.yml
+        ├── selinux-audit.yml
+        └── account-audit.yml
 ```
 
 ## First milestone: read-only assessment
@@ -48,8 +63,9 @@ linux-security-hardening/
 1. Review the baseline checklist in `docs/security-baseline.md`.
 2. Run `scripts/audit-baseline.sh` on a disposable RHEL 10 VM.
 3. Review the output and investigate any findings.
-4. Configure Ansible inventory using the example file.
-5. Run the audit playbook against the lab nodes.
+4. Review the Ansible instructions in `ansible/README.md`.
+5. Configure a local inventory using the example file.
+6. Run the read-only audit playbooks against the lab nodes.
 
 ### Run the Bash audit
 
@@ -81,8 +97,9 @@ ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/security-audit
 ## Roadmap
 
 - [x] Create project structure and initial read-only audit templates
+- [x] Add read-only Ansible audits for baseline, SSH, firewalld, SELinux, and accounts
 - [ ] Test Bash audit on RHEL 10.3 and record sample findings
-- [ ] Test Ansible audit against mac1 and mac2
+- [ ] Test Ansible audits against mac1 and mac2
 - [ ] Add SSH hardening guidance and a controlled remediation playbook
 - [ ] Add firewalld and SELinux hardening exercises
 - [ ] Add account, permissions, and auditd checks
