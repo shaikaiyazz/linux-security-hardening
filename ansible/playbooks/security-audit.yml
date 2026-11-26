@@ -1,0 +1,59 @@
+---
+- name: Read-only Linux security baseline audit
+  hosts: managed
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Display host and operating system
+      ansible.builtin.debug:
+        msg:
+          - "Host: {{ inventory_hostname }}"
+          - "Distribution: {{ ansible_facts.distribution }} {{ ansible_facts.distribution_version }}"
+          - "Kernel: {{ ansible_facts.kernel }}"
+
+    - name: Check SELinux mode
+      ansible.builtin.command: getenforce
+      register: selinux_mode
+      changed_when: false
+      failed_when: false
+
+    - name: Check firewalld service state
+      ansible.builtin.command: systemctl is-active firewalld
+      register: firewalld_state
+      changed_when: false
+      failed_when: false
+
+    - name: Check auditd service state
+      ansible.builtin.command: systemctl is-active auditd
+      register: auditd_state
+      changed_when: false
+      failed_when: false
+
+    - name: Read effective SSH security settings
+      ansible.builtin.command: sshd -T
+      register: sshd_effective
+      changed_when: false
+      failed_when: false
+
+    - name: Show selected SSH settings
+      ansible.builtin.debug:
+        msg: "{{ sshd_effective.stdout_lines | select('match', '^(permitrootlogin|passwordauthentication|pubkeyauthentication|x11forwarding) ') | list }}"
+      when: sshd_effective.rc == 0
+
+    - name: Report security service states
+      ansible.builtin.debug:
+        msg:
+          - "SELinux mode: {{ selinux_mode.stdout | default('unknown') }}"
+          - "firewalld: {{ firewalld_state.stdout | default('unknown') }}"
+          - "auditd: {{ auditd_state.stdout | default('unknown') }}"
+
+    - name: Check critical account file permissions
+      ansible.builtin.command: stat -c '%a %U:%G %n' /etc/passwd /etc/group /etc/shadow /etc/gshadow
+      register: account_file_permissions
+      changed_when: false
+      failed_when: false
+
+    - name: Display critical account file permissions
+      ansible.builtin.debug:
+        var: account_file_permissions.stdout_lines
