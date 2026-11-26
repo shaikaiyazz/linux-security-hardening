@@ -1,0 +1,18 @@
+# Local Ansible inventory and secrets
+ansible/inventory/hosts.ini
+*.vault
+vault-password*
+secret.txt
+
+# SSH keys and credentials
+*.pem
+*.key
+id_rsa
+id_ed25519
+.ssh/
+
+# Local output and temporary files
+*.log
+*.out
+*.tmp
+.DS_Store
